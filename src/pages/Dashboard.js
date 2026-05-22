@@ -7,6 +7,7 @@ import { useStore } from "../lib/store";
 import LeadList from "../components/LeadList";
 import CallHistory from "../components/CallHistory";
 import RemindersPanel from "../components/RemindersPanel";
+import BotManager from "../components/BotManager";
 import "../styles/dashboard.css";
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function Dashboard() {
                     navigate("/auth");
                     return;
                 }
-                setUser({ id: data.user.id, email: data.user.email || "" });
+                setUser({ id: data.user.id, email: data.user.email || "", phone: data.user.phone });
                 const { data: leadsData } = await getLeads(data.user.id);
                 if (leadsData)
                     setLeads(leadsData);
@@ -46,5 +47,5 @@ export default function Dashboard() {
     };
     if (loading)
         return _jsx("div", { className: "loading", children: "\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u062D\u0645\u064A\u0644..." });
-    return (_jsxs("div", { className: "dashboard", children: [_jsxs("header", { className: "dashboard-header", children: [_jsxs("div", { children: [_jsx("h1", { children: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645" }), _jsx("p", { className: "subtitle", children: user?.email })] }), _jsx("button", { onClick: handleLogout, className: "btn btn-secondary", children: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C" })] }), _jsxs("nav", { className: "tabs", children: [_jsxs("button", { className: `tab ${activeTab === "leads" ? "active" : ""}`, onClick: () => setActiveTab("leads"), children: ["\u0627\u0644\u0639\u0645\u0644\u0627\u0621 (", leads.length, ")"] }), _jsx("button", { className: `tab ${activeTab === "calls" ? "active" : ""}`, onClick: () => setActiveTab("calls"), children: "\u0627\u0644\u0645\u0643\u0627\u0644\u0645\u0627\u062A" }), _jsxs("button", { className: `tab ${activeTab === "reminders" ? "active" : ""}`, onClick: () => setActiveTab("reminders"), children: ["\u0627\u0644\u062A\u0630\u0643\u064A\u0631\u0627\u062A (", reminders.length, ")"] })] }), _jsxs("main", { className: "content", children: [activeTab === "leads" && _jsx(LeadList, {}), activeTab === "calls" && _jsx(CallHistory, {}), activeTab === "reminders" && _jsx(RemindersPanel, { reminders: reminders })] })] }));
+    return (_jsxs("div", { className: "dashboard", children: [_jsxs("header", { className: "dashboard-header", children: [_jsxs("div", { children: [_jsx("h1", { children: "\u0644\u0648\u062D\u0629 \u0627\u0644\u062A\u062D\u0643\u0645" }), _jsx("p", { className: "subtitle", children: user?.email || user?.phone })] }), _jsx("button", { onClick: handleLogout, className: "btn btn-secondary", children: "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C" })] }), _jsxs("nav", { className: "tabs", children: [_jsxs("button", { className: `tab ${activeTab === "leads" ? "active" : ""}`, onClick: () => setActiveTab("leads"), children: ["\u0627\u0644\u0639\u0645\u0644\u0627\u0621 (", leads.length, ")"] }), _jsx("button", { className: `tab ${activeTab === "calls" ? "active" : ""}`, onClick: () => setActiveTab("calls"), children: "\u0627\u0644\u0645\u0643\u0627\u0644\u0645\u0627\u062A" }), _jsxs("button", { className: `tab ${activeTab === "reminders" ? "active" : ""}`, onClick: () => setActiveTab("reminders"), children: ["\u0627\u0644\u062A\u0630\u0643\u064A\u0631\u0627\u062A (", reminders.length, ")"] }), _jsx("button", { className: `tab ${activeTab === "bots" ? "active" : ""}`, onClick: () => setActiveTab("bots"), children: "\u0627\u0644\u0628\u0648\u062A\u0627\u062A" })] }), _jsxs("main", { className: "content", children: [activeTab === "leads" && _jsx(LeadList, {}), activeTab === "calls" && _jsx(CallHistory, {}), activeTab === "reminders" && _jsx(RemindersPanel, { reminders: reminders }), activeTab === "bots" && _jsx(BotManager, {})] })] }));
 }
