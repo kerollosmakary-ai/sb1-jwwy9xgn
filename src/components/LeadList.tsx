@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createLead } from "../lib/api";
+import { canSyncContacts, pickContacts } from "../lib/contacts";
 import { useStore } from "../lib/store";
 import "../styles/leads.css";
 
@@ -8,6 +9,8 @@ export default function LeadList() {
   const navigate = useNavigate();
   const { user, leads, setLeads, setCurrentLead } = useStore();
   const [showForm, setShowForm] = useState(false);
+  const [syncingContacts, setSyncingContacts] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -40,14 +43,61 @@ export default function LeadList() {
     navigate("/record-call");
   };
 
+  const handleContactSync = async () => {
+    if (!user) return;
+
+    if (!canSyncContacts()) {
+      setSyncMessage("المتصفح لا يدعم مزامنة جهات الاتصال. استخدم Chrome/Android أو أضف العميل يدوياً.");
+      return;
+    }
+
+    setSyncingContacts(true);
+    setSyncMessage("");
+
+    try {
+      const contacts = await pickContacts();
+      const existingPhones = new Set(leads.map((lead) => lead.phone));
+      const newContacts = contacts.filter((contact) => contact.phone && !existingPhones.has(contact.phone));
+
+      const createdLeads = await Promise.all(
+        newContacts.map(async (contact) => {
+          const { data } = await createLead({
+            agent_id: user.id,
+            name: contact.name || contact.phone,
+            phone: contact.phone,
+            email: contact.email || "",
+            status: "New",
+            language: "ar",
+          });
+          return data;
+        }),
+      );
+
+      const importedLeads = createdLeads.filter((lead): lead is typeof leads[0] => Boolean(lead));
+      if (importedLeads.length > 0) setLeads([...importedLeads, ...leads]);
+      setSyncMessage(`تمت مزامنة ${importedLeads.length} جهة اتصال`);
+    } catch (err) {
+      setSyncMessage(err instanceof Error ? err.message : "تعذرت مزامنة جهات الاتصال");
+    } finally {
+      setSyncingContacts(false);
+    }
+  };
+
   return (
     <div className="leads-container">
       <div className="leads-header">
         <h2>العملاء</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
-          {showForm ? "إغلاق" : "+ إضافة"}
-        </button>
+        <div className="lead-actions">
+          <button onClick={handleContactSync} className="btn btn-secondary" disabled={syncingContacts}>
+            {syncingContacts ? "جاري المزامنة..." : "مزامنة جهات الاتصال"}
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
+            {showForm ? "إغلاق" : "+ إضافة"}
+          </button>
+        </div>
       </div>
+
+      {syncMessage && <div className="sync-message">{syncMessage}</div>}
 
       {showForm && (
         <form onSubmit={handleAdd} className="lead-form">

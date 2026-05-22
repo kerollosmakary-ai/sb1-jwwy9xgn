@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useStore } from "./lib/store";
 import { getCurrentUser } from "./lib/auth";
+import { hasTrafficApproval } from "./lib/access";
+import AccessApproval from "./pages/AccessApproval";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import RecordCall from "./pages/RecordCall";
@@ -9,16 +11,21 @@ import "./styles/global.css";
 
 function App() {
   const { user, setUser } = useStore();
+  const [trafficApproved, setTrafficApproved] = useState(hasTrafficApproval);
 
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await getCurrentUser();
       if (data?.user) {
-        setUser({ id: data.user.id, email: data.user.email || "" });
+        setUser({ id: data.user.id, email: data.user.email || "", phone: data.user.phone });
       }
     };
     checkAuth();
   }, []);
+
+  if (!trafficApproved) {
+    return <AccessApproval onApproved={() => setTrafficApproved(true)} />;
+  }
 
   return (
     <BrowserRouter>
