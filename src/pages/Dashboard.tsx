@@ -6,12 +6,13 @@ import { useStore } from "../lib/store";
 import LeadList from "../components/LeadList";
 import CallHistory from "../components/CallHistory";
 import RemindersPanel from "../components/RemindersPanel";
+import BotManager from "../components/BotManager";
 import "../styles/dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, setUser, setLeads, leads } = useStore();
-  const [activeTab, setActiveTab] = useState<"leads" | "calls" | "reminders">("leads");
+  const [activeTab, setActiveTab] = useState<"leads" | "calls" | "reminders" | "bots">("leads");
   const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +25,7 @@ export default function Dashboard() {
           return;
         }
 
-        setUser({ id: data.user.id, email: data.user.email || "" });
+        setUser({ id: data.user.id, email: data.user.email || "", phone: data.user.phone });
 
         const { data: leadsData } = await getLeads(data.user.id);
         if (leadsData) setLeads(leadsData);
@@ -54,7 +55,7 @@ export default function Dashboard() {
       <header className="dashboard-header">
         <div>
           <h1>لوحة التحكم</h1>
-          <p className="subtitle">{user?.email}</p>
+          <p className="subtitle">{user?.email || user?.phone}</p>
         </div>
         <button onClick={handleLogout} className="btn btn-secondary">
           تسجيل الخروج
@@ -80,12 +81,19 @@ export default function Dashboard() {
         >
           التذكيرات ({reminders.length})
         </button>
+        <button
+          className={`tab ${activeTab === "bots" ? "active" : ""}`}
+          onClick={() => setActiveTab("bots")}
+        >
+          البوتات
+        </button>
       </nav>
 
       <main className="content">
         {activeTab === "leads" && <LeadList />}
         {activeTab === "calls" && <CallHistory />}
         {activeTab === "reminders" && <RemindersPanel reminders={reminders} />}
+        {activeTab === "bots" && <BotManager />}
       </main>
     </div>
   );

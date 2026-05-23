@@ -23,7 +23,7 @@ export default function RecordCall() {
   useEffect(() => {
     const init = async () => {
       const { data } = await getCurrentUser();
-      if (data?.user) setUser({ id: data.user.id, email: data.user.email || "" });
+      if (data?.user) setUser({ id: data.user.id, email: data.user.email || "", phone: data.user.phone });
     };
     init();
   }, []);

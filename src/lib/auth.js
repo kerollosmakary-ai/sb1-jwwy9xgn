@@ -5,6 +5,12 @@ export async function signUp(email, password) {
 export async function signIn(email, password) {
     return supabase.auth.signInWithPassword({ email, password });
 }
+export async function sendPhoneOtp(phone) {
+    return supabase.auth.signInWithOtp({ phone });
+}
+export async function verifyPhoneOtp(phone, token) {
+    return supabase.auth.verifyOtp({ phone, token, type: "sms" });
+}
 export async function signOut() {
     return supabase.auth.signOut();
 }

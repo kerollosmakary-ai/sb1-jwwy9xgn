@@ -13,6 +13,21 @@
   margin: 0;
 }
 
+.lead-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sync-message {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  color: #374151;
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+}
+
 .lead-form {
   background: white;
   padding: 2rem;
@@ -89,6 +104,16 @@
 }
 
 @media (max-width: 768px) {
+  .leads-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .lead-actions {
+    flex-direction: column;
+  }
+
   .lead-form {
     grid-template-columns: 1fr;
   }
