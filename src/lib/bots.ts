@@ -15,7 +15,8 @@ export interface BotPreset {
 export interface UserBot {
   id: string;
   presetId: string;
-  apiKey: string;
+  apiKey?: string;
+  apiKeyHint: string;
   thinkingEnabled: boolean;
   searchEnabled: boolean;
   createdAt: string;
@@ -75,7 +76,11 @@ export function loadUserBots(): UserBot[] {
   if (!raw) return [];
 
   try {
-    return JSON.parse(raw) as UserBot[];
+    const bots = JSON.parse(raw) as UserBot[];
+    return bots.map((bot) => ({
+      ...bot,
+      apiKeyHint: bot.apiKeyHint || maskApiKey(bot.apiKey || ""),
+    }));
   } catch {
     localStorage.removeItem(BOTS_KEY);
     return [];
@@ -93,4 +98,8 @@ export function createBotId(presetId: string) {
 export function maskApiKey(apiKey: string) {
   if (apiKey.length <= 8) return "********";
   return `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`;
+}
+
+export function createApiKeyHint(apiKey: string) {
+  return maskApiKey(apiKey.trim());
 }

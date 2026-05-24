@@ -13,6 +13,15 @@
   margin-top: 0.5rem;
 }
 
+.bot-message {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  color: #1d4ed8;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+}
+
 .bot-layout {
   display: grid;
   gap: 1.5rem;

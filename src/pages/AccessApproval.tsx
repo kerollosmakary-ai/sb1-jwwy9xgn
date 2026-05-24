@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { submitAccessRequest } from "../lib/api";
 import { approveTrafficWithCode, getAccessRequest, saveAccessRequest } from "../lib/access";
 import "../styles/access-approval.css";
 
@@ -17,15 +18,31 @@ export default function AccessApproval({ onApproved }: Props) {
   const [approvalCode, setApprovalCode] = useState("");
   const [message, setMessage] = useState(existingRequest ? "طلبك محفوظ وينتظر الموافقة" : "");
   const [messageType, setMessageType] = useState<"success" | "error" | "info">("info");
+  const [requestingAccess, setRequestingAccess] = useState(false);
 
-  const handleRequest = (event: FormEvent) => {
+  const handleRequest = async (event: FormEvent) => {
     event.preventDefault();
-    saveAccessRequest({
+    const request = {
       ...form,
       requestedAt: new Date().toISOString(),
-    });
-    setMessage("تم إرسال طلب الدخول. استخدم كود الموافقة عند استلامه من الفريق.");
-    setMessageType("success");
+    };
+
+    setRequestingAccess(true);
+    saveAccessRequest(request);
+
+    try {
+      const { error } = await submitAccessRequest(request);
+      if (error) throw error;
+      setMessage("تم إرسال طلب الدخول وحفظه في قاعدة البيانات. استخدم كود الموافقة عند استلامه من الفريق.");
+      setMessageType("success");
+    } catch (err) {
+      setMessage(
+        "تم حفظ الطلب على هذا الجهاز، لكن تعذر إرساله لقاعدة البيانات. تحقق من إعداد Supabase ثم أعد المحاولة.",
+      );
+      setMessageType("info");
+    } finally {
+      setRequestingAccess(false);
+    }
   };
 
   const handleApprove = (event: FormEvent) => {
@@ -79,8 +96,8 @@ export default function AccessApproval({ onApproved }: Props) {
               rows={4}
               required
             />
-            <button type="submit" className="btn btn-primary">
-              إرسال الطلب
+            <button type="submit" className="btn btn-primary" disabled={requestingAccess}>
+              {requestingAccess ? "جاري الإرسال..." : "إرسال الطلب"}
             </button>
           </form>
 
