@@ -1,4 +1,25 @@
 import { supabase } from "./supabase";
+function mapUserBot(row) {
+    return {
+        id: row.id,
+        presetId: row.preset_id,
+        apiKeyHint: row.api_key_hint,
+        thinkingEnabled: row.thinking_enabled,
+        searchEnabled: row.search_enabled,
+        createdAt: row.created_at,
+    };
+}
+export async function submitAccessRequest(request) {
+    return supabase.from("access_requests").insert([
+        {
+            name: request.name,
+            company: request.company,
+            phone: request.phone,
+            reason: request.reason,
+            requested_at: request.requestedAt,
+        },
+    ]);
+}
 export async function createLead(lead) {
     return supabase.from("leads").insert([lead]).select().single();
 }
@@ -55,6 +76,33 @@ export async function getReminders(agentId) {
 }
 export async function updateReminder(id, updates) {
     return supabase.from("reminders").update(updates).eq("id", id).select().single();
+}
+export async function getUserBots(agentId) {
+    const { data, error } = await supabase
+        .from("user_bots")
+        .select("id,preset_id,api_key_hint,thinking_enabled,search_enabled,created_at")
+        .eq("agent_id", agentId)
+        .order("created_at", { ascending: false });
+    return { data: data ? data.map(mapUserBot) : null, error };
+}
+export async function createUserBot(agentId, bot) {
+    const { data, error } = await supabase
+        .from("user_bots")
+        .insert([
+        {
+            agent_id: agentId,
+            preset_id: bot.presetId,
+            api_key_hint: bot.apiKeyHint,
+            thinking_enabled: bot.thinkingEnabled,
+            search_enabled: bot.searchEnabled,
+        },
+    ])
+        .select("id,preset_id,api_key_hint,thinking_enabled,search_enabled,created_at")
+        .single();
+    return { data: data ? mapUserBot(data) : null, error };
+}
+export async function deleteUserBot(id) {
+    return supabase.from("user_bots").delete().eq("id", id);
 }
 export async function analyzeTranscript(transcript, language = "ar") {
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze`;
