@@ -9,22 +9,31 @@ export interface AccessRequest {
   requestedAt: string;
 }
 
+function getStorage() {
+  try {
+    return typeof window !== "undefined" ? window.localStorage : null;
+  } catch {
+    return null;
+  }
+}
+
 export function hasTrafficApproval() {
-  return localStorage.getItem(APPROVAL_KEY) === "approved";
+  return getStorage()?.getItem(APPROVAL_KEY) === "approved";
 }
 
 export function saveAccessRequest(request: AccessRequest) {
-  localStorage.setItem(REQUEST_KEY, JSON.stringify(request));
+  getStorage()?.setItem(REQUEST_KEY, JSON.stringify(request));
 }
 
 export function getAccessRequest(): AccessRequest | null {
-  const raw = localStorage.getItem(REQUEST_KEY);
+  const storage = getStorage();
+  const raw = storage?.getItem(REQUEST_KEY);
   if (!raw) return null;
 
   try {
     return JSON.parse(raw) as AccessRequest;
   } catch {
-    localStorage.removeItem(REQUEST_KEY);
+    storage?.removeItem(REQUEST_KEY);
     return null;
   }
 }
@@ -46,10 +55,10 @@ export function approveTrafficWithCode(code: string) {
     return { approved: false, message: "كود الموافقة غير صحيح" };
   }
 
-  localStorage.setItem(APPROVAL_KEY, "approved");
+  getStorage()?.setItem(APPROVAL_KEY, "approved");
   return { approved: true, message: "تمت الموافقة على الدخول" };
 }
 
 export function clearTrafficApproval() {
-  localStorage.removeItem(APPROVAL_KEY);
+  getStorage()?.removeItem(APPROVAL_KEY);
 }
