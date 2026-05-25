@@ -3,52 +3,100 @@ import {
   BOT_PRESETS,
   PLUGIN_LABELS,
   UserBot,
+  createApiKeyHint,
   createBotId,
   loadUserBots,
-  maskApiKey,
   saveUserBots,
 } from "../lib/bots";
+import { createUserBot, deleteUserBot, getUserBots } from "../lib/api";
+import { useStore } from "../lib/store";
 import "../styles/bots.css";
 
 export default function BotManager() {
+  const { user } = useStore();
   const [bots, setBots] = useState<UserBot[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState(BOT_PRESETS[0].id);
   const [apiKey, setApiKey] = useState("");
   const [thinkingEnabled, setThinkingEnabled] = useState(true);
   const [searchEnabled, setSearchEnabled] = useState(true);
+  const [message, setMessage] = useState("");
+  const [loadingBots, setLoadingBots] = useState(false);
+  const [savingBot, setSavingBot] = useState(false);
   const selectedPreset = BOT_PRESETS.find((preset) => preset.id === selectedPresetId) || BOT_PRESETS[0];
 
   useEffect(() => {
-    setBots(loadUserBots());
-  }, []);
+    const loadBots = async () => {
+      if (!user) {
+        setBots(loadUserBots());
+        return;
+      }
+
+      setLoadingBots(true);
+      try {
+        const { data, error } = await getUserBots(user.id);
+        if (error) throw error;
+        setBots(data || []);
+        setMessage("");
+      } catch (err) {
+        setBots(loadUserBots());
+        setMessage("تعذر تحميل البوتات من قاعدة البيانات، تم عرض النسخة المحلية.");
+      } finally {
+        setLoadingBots(false);
+      }
+    };
+
+    loadBots();
+  }, [user]);
 
   useEffect(() => {
     if (!selectedPreset.thinkingSupported) setThinkingEnabled(false);
     if (!selectedPreset.searchSupported) setSearchEnabled(false);
   }, [selectedPreset.id, selectedPreset.searchSupported, selectedPreset.thinkingSupported]);
 
-  const persistBots = (nextBots: UserBot[]) => {
+  const persistLocalBots = (nextBots: UserBot[]) => {
     setBots(nextBots);
     saveUserBots(nextBots);
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const nextBot: UserBot = {
+    const localBot: UserBot = {
       id: createBotId(selectedPreset.id),
       presetId: selectedPreset.id,
-      apiKey,
+      apiKeyHint: createApiKeyHint(apiKey),
       thinkingEnabled: selectedPreset.thinkingSupported && thinkingEnabled,
       searchEnabled: selectedPreset.searchSupported && searchEnabled,
       createdAt: new Date().toISOString(),
     };
 
-    persistBots([nextBot, ...bots]);
-    setApiKey("");
+    setSavingBot(true);
+    try {
+      if (!user) throw new Error("Missing user");
+      const { data, error } = await createUserBot(user.id, localBot);
+      if (error) throw error;
+      setBots([data || localBot, ...bots]);
+      setMessage("تم حفظ البوت في قاعدة البيانات.");
+      setApiKey("");
+    } catch (err) {
+      persistLocalBots([localBot, ...bots]);
+      setMessage("تم حفظ البوت محلياً فقط. شغّل migration قاعدة البيانات لحفظه على Supabase.");
+      setApiKey("");
+    } finally {
+      setSavingBot(false);
+    }
   };
 
-  const handleDelete = (botId: string) => {
-    persistBots(bots.filter((bot) => bot.id !== botId));
+  const handleDelete = async (botId: string) => {
+    const nextBots = bots.filter((bot) => bot.id !== botId);
+    setBots(nextBots);
+    saveUserBots(nextBots);
+
+    try {
+      await deleteUserBot(botId);
+      setMessage("");
+    } catch {
+      setMessage("تم حذف البوت من الواجهة، لكن تعذر حذف السجل من قاعدة البيانات.");
+    }
   };
 
   return (
@@ -59,6 +107,8 @@ export default function BotManager() {
           <p>البوتات مبنية من Presets معتمدة. المستخدم يضيف API key ويختار Thinking/Search فقط.</p>
         </div>
       </div>
+
+      {message && <div className="bot-message">{message}</div>}
 
       <div className="bot-layout">
         <section className="bot-builder">
@@ -140,15 +190,17 @@ export default function BotManager() {
               </label>
             </div>
 
-            <button type="submit" className="btn btn-primary">
-              إنشاء بوت
+            <button type="submit" className="btn btn-primary" disabled={savingBot}>
+              {savingBot ? "جاري الحفظ..." : "إنشاء بوت"}
             </button>
           </form>
         </section>
 
         <section className="bot-list">
           <h3>البوتات المنشأة</h3>
-          {bots.length === 0 ? (
+          {loadingBots ? (
+            <p className="empty">جاري تحميل البوتات...</p>
+          ) : bots.length === 0 ? (
             <p className="empty">لا توجد بوتات بعد</p>
           ) : (
             bots.map((bot) => {
@@ -161,7 +213,7 @@ export default function BotManager() {
                     <h4>{preset.name}</h4>
                     <p>{preset.description}</p>
                     <div className="bot-meta">
-                      <span>API: {maskApiKey(bot.apiKey)}</span>
+                      <span>API: {bot.apiKeyHint}</span>
                       <span>Thinking: {bot.thinkingEnabled ? "On" : "Off"}</span>
                       <span>Search: {bot.searchEnabled ? "On" : "Off"}</span>
                     </div>

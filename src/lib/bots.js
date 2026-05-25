@@ -46,7 +46,11 @@ export function loadUserBots() {
     if (!raw)
         return [];
     try {
-        return JSON.parse(raw);
+        const bots = JSON.parse(raw);
+        return bots.map((bot) => ({
+            ...bot,
+            apiKeyHint: bot.apiKeyHint || maskApiKey(bot.apiKey || ""),
+        }));
     }
     catch {
         localStorage.removeItem(BOTS_KEY);
@@ -63,4 +67,7 @@ export function maskApiKey(apiKey) {
     if (apiKey.length <= 8)
         return "********";
     return `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`;
+}
+export function createApiKeyHint(apiKey) {
+    return maskApiKey(apiKey.trim());
 }
