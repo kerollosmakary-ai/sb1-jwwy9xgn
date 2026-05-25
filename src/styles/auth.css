@@ -34,6 +34,28 @@
   margin-bottom: 1.5rem;
 }
 
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  background: #f3f4f6;
+  border-radius: 0.75rem;
+  padding: 0.35rem;
+}
+
+.auth-tabs button {
+  background: transparent;
+  color: #6b7280;
+  padding: 0.65rem;
+}
+
+.auth-tabs button.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
 .auth-card input {
   width: 100%;
   padding: 0.875rem;

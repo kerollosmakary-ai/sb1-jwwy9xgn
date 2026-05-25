@@ -2,23 +2,29 @@
 
 ## Cursor Cloud specific instructions
 
-### Project overview
+### Overview
 
-Arabic Real Estate CRM ("نظام إدارة العقارات") — a single-page React + TypeScript app built with Vite. The backend is a remote Supabase instance (PostgreSQL + Auth + Edge Functions); there is no local backend or database.
+This is a **Real Estate CRM** (نظام إدارة العقارات) — an Arabic/RTL React SPA built with Vite + TypeScript + Supabase. There is no local backend; all data (auth, leads, calls, reminders) is handled by the hosted Supabase instance.
 
-### Dev commands
+### Development commands
 
-| Task | Command |
-|------|---------|
+| Action | Command |
+|--------|---------|
 | Install deps | `npm install` |
-| Dev server | `npm run dev` (Vite on port 5173) |
-| Build | `npm run build` (`tsc && vite build`) |
-| Preview prod | `npm run preview` |
+| Dev server | `npm run dev` (port 5173) |
+| Type check | `npx tsc --noEmit` |
+| Production build | `npm run build` |
 
-### Caveats
+There is no ESLint config, no test framework, and no lint script in this repo. The TypeScript compiler (`tsc --noEmit`) is the primary static analysis tool.
 
-- **No test framework or lint tooling** is configured in this repo. There are no test scripts, testing libraries, or ESLint/Prettier configs.
-- **Supabase is remote-only.** The `.env` file contains credentials for a hosted Supabase project (`huyidcbqginhiccpcjhj.supabase.co`). Auth and all data operations require network access to this instance.
-- **Supabase may be unreachable** from sandboxed/cloud environments. The frontend loads and renders correctly regardless, but login/signup and all data operations will fail with "Failed to fetch" if the Supabase endpoint is not accessible.
-- **Duplicate `.js` files** exist alongside every `.tsx`/`.ts` source file (likely from a StackBlitz export). The canonical sources are the TypeScript files; the `.js` duplicates are not used by the build.
-- **RTL / Arabic UI** — the entire interface is in Arabic with right-to-left layout (`lang="ar"` on `<html>`).
+### Database
+
+The Supabase schema lives in `supabase/migrations/20260524165300_create_crm_schema.sql`.
+Apply it with `supabase db push` or by running the SQL in Supabase SQL editor.
+
+### Important notes
+
+- **External dependency**: The app requires network access to `https://huyidcbqginhiccpcjhj.supabase.co` for authentication and all data operations. The Supabase anon key and URL are in `.env`. If DNS cannot resolve this host (common in restricted cloud VMs), authentication will fail with "Failed to fetch" but the frontend UI still renders correctly.
+- **No local backend**: There is nothing to docker-compose or run locally beyond the Vite dev server. The database is hosted in Supabase and managed by the migration file.
+- **RTL layout**: The UI is entirely in Arabic with right-to-left layout. This is by design.
+- **Node.js**: The project works with Node 22+. The `package-lock.json` is the lockfile (use `npm install`).

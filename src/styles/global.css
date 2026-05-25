@@ -65,6 +65,11 @@ input:focus, select:focus, textarea:focus {
   color: white;
 }
 
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
 .btn-secondary {
   background: var(--neutral);
   color: white;

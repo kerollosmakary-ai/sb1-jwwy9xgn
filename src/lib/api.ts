@@ -1,5 +1,39 @@
 import { supabase } from "./supabase";
+import { AccessRequest } from "./access";
+import { UserBot } from "./bots";
 import { Lead } from "./store";
+
+interface UserBotRow {
+  id: string;
+  preset_id: string;
+  api_key_hint: string;
+  thinking_enabled: boolean;
+  search_enabled: boolean;
+  created_at: string;
+}
+
+function mapUserBot(row: UserBotRow): UserBot {
+  return {
+    id: row.id,
+    presetId: row.preset_id,
+    apiKeyHint: row.api_key_hint,
+    thinkingEnabled: row.thinking_enabled,
+    searchEnabled: row.search_enabled,
+    createdAt: row.created_at,
+  };
+}
+
+export async function submitAccessRequest(request: AccessRequest) {
+  return supabase.from("access_requests").insert([
+    {
+      name: request.name,
+      company: request.company,
+      phone: request.phone,
+      reason: request.reason,
+      requested_at: request.requestedAt,
+    },
+  ]);
+}
 
 export async function createLead(lead: Omit<Lead, "id" | "created_at">) {
   return supabase.from("leads").insert([lead]).select().single();
@@ -68,6 +102,41 @@ export async function getReminders(agentId: string) {
 
 export async function updateReminder(id: string, updates: any) {
   return supabase.from("reminders").update(updates).eq("id", id).select().single();
+}
+
+export async function getUserBots(agentId: string) {
+  const { data, error } = await supabase
+    .from("user_bots")
+    .select("id,preset_id,api_key_hint,thinking_enabled,search_enabled,created_at")
+    .eq("agent_id", agentId)
+    .order("created_at", { ascending: false });
+
+  return { data: data ? data.map(mapUserBot) : null, error };
+}
+
+export async function createUserBot(
+  agentId: string,
+  bot: Pick<UserBot, "presetId" | "apiKeyHint" | "thinkingEnabled" | "searchEnabled">,
+) {
+  const { data, error } = await supabase
+    .from("user_bots")
+    .insert([
+      {
+        agent_id: agentId,
+        preset_id: bot.presetId,
+        api_key_hint: bot.apiKeyHint,
+        thinking_enabled: bot.thinkingEnabled,
+        search_enabled: bot.searchEnabled,
+      },
+    ])
+    .select("id,preset_id,api_key_hint,thinking_enabled,search_enabled,created_at")
+    .single();
+
+  return { data: data ? mapUserBot(data) : null, error };
+}
+
+export async function deleteUserBot(id: string) {
+  return supabase.from("user_bots").delete().eq("id", id);
 }
 
 export async function analyzeTranscript(transcript: string, language: string = "ar") {
